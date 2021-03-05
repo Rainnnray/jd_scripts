@@ -1,15 +1,16 @@
-name: sync-jd_scripts
+name: sync-gitee
 
 on:
-  workflow_dispatch:
   schedule:
-##    - cron: '*/15 0-16,22-23 * * *'
+  - cron:  "*/30 * * * *"
+  workflow_dispatch:
+  watch:
+    types: started
 
 jobs:
   build:
     runs-on: ubuntu-18.04
-    if: github.repository == 'Rainnnray/jd_scripts'
-    timeout-minutes: 2
+    if: ${{ github.event.repository.owner.id == github.event.sender.id }}
 
     steps:
     - name: Init Build Dependencies
@@ -17,28 +18,33 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo -E rm -rf /etc/apt/sources.list.d
-        sudo -E apt-get update -y
-        sudo -E apt-get install -y build-essential git git-core curl wget
-        sudo -E apt-get clean -y
+        sudo -E apt-get update -y && apt-get install -y build-essential git git-core curl wget && apt-get clean -y
         git config --global user.name 'GitHub Actions' && git config --global user.email 'noreply@github.com'
-
-    - name: Prepare Key
+    - name: Prepare
       run: |
         mkdir -p ~/.ssh
         echo -e "${{ secrets.LXKEY }}" > ~/.ssh/id_rsa
-        chmod 700 ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
         ssh-keyscan gitee.com > ~/.ssh/known_hosts
-
     - name: Clone Master
       run: |
         git clone -b master git@gitee.com:lxk0301/jd_scripts.git master
-
     - name: Push Master
       uses: ad-m/github-push-action@master
       with:
         directory: master
-        github_token: ${{ secrets.RELEASES_TOKEN }}"
+        github_token: ${{ secrets.PAT }}
         branch: master
+
+    - name: Clone Main
+      run: |
+        git clone -b main git@gitee.com:lxk0301/jd_scripts.git main
+    - name: Push Main
+      uses: ad-m/github-push-action@master
+      with:
+        directory: main
+        github_token: ${{ secrets.PAT }}
+        branch: main
 
     - name: Delete Workflow Runs
       uses: Mattraks/delete-workflow-runs@main
