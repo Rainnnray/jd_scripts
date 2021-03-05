@@ -44,7 +44,7 @@ jobs:
       with:
         directory: main
         github_token: ${{ secrets.PAT }}
-        branch: main
+        branch: master
 
     - name: Delete Workflow Runs
       uses: Mattraks/delete-workflow-runs@main
